@@ -16,7 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from fr import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('register/', views.register_face, name='register_face'),
+    path('recognize/', views.recognize_from_webcam, name='recognize_from_webcam'),
 ]

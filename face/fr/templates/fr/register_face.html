@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Face</title>
+</head>
+<body>
+    <h1>Register Face</h1>
+
+    <!-- Video Stream from Webcam -->
+    <video id="videoElement" width="640" height="480" autoplay></video>
+
+    <!-- Button to capture image -->
+    <button id="captureBtn">Capture Face</button>
+
+    <!-- Canvas for displaying captured image -->
+    <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
+
+    <h2>Enter Details</h2>
+    <form id="faceForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        <br>
+        <label for="class_name">Class Name:</label>
+        <input type="text" id="class_name" name="class_name" required>
+        <br>
+        <input type="submit" value="Register">
+    </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+    <script>
+        // Access the webcam
+        const video = document.getElementById('videoElement');
+        const captureBtn = document.getElementById('captureBtn');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+
+        // Start the webcam stream
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function (stream) {
+                video.srcObject = stream;
+            })
+            .catch(function (err) {
+                console.error("Error accessing webcam: ", err);
+            });
+
+        // Capture button click event
+        captureBtn.addEventListener('click', function () {
+            // Draw current video frame on canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convert the canvas to image data
+            const imageData = canvas.toDataURL('image/png');
+
+            // Send the image data to the server (Django backend)
+            const formData = new FormData();
+            formData.append('image', imageData);
+            formData.append('name', document.getElementById('name').value);
+            formData.append('class_name', document.getElementById('class_name').value);
+
+            fetch('/register_face/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Registration successful', data);
+                alert('Face registered successfully!');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error registering face');
+            });
+        });
+    </script>
+</body>
+</html>

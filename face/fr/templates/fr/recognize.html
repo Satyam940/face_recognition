@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Face Recognition</title>
+</head>
+<body>
+    <h2>Live Face Recognition</h2>
+    <video id="video" width="640" height="480" autoplay></video>
+    <p id="matchInfo">Waiting for recognition...</p>
+
+    <script>
+        const video = document.getElementById('video');
+        const matchInfo = document.getElementById('matchInfo');
+
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            video.srcObject = stream;
+        });
+
+        const captureAndSend = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            const dataURL = canvas.toDataURL('image/jpeg');
+
+            fetch('/recognize/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'image=' + encodeURIComponent(dataURL)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.matches && data.matches.length > 0) {
+                    const match = data.matches[0];
+                    matchInfo.innerText = `Name: ${match.name} | UID: ${match.uid} | Class: ${match.class_name}`;
+                } else {
+                    matchInfo.innerText = "No match found";
+                }
+            });
+        };
+
+        setInterval(captureAndSend, 3000); // send every 3 seconds
+    </script>
+</body>
+</html>

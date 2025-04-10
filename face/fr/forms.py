@@ -1,8 +1,7 @@
-from django import  forms
-from .models import KnownFace
+from django import forms
+from .models import KnownFace  # Make sure you're importing the model
 
-
-class knownFaceForm(forms.ModelForm):
+class KnownFaceForm(forms.ModelForm):
     class Meta:
         model = KnownFace
-        fields = ['name','uid', 'class', 'image']
+        fields = ['name', 'encoding', 'class_name']  # List the fields you want

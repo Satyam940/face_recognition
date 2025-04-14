@@ -4,40 +4,48 @@
     <meta charset="UTF-8">
     <title>Face Recognition</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-        video { border: 2px solid #333; }
-        .result { margin-top: 30px; font-size: 18px; }
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 30px; }
+        video { border: 2px solid #333; width: 100%; max-width: 640px; }
+        .result { margin-top: 20px; font-size: 18px; }
         .error { color: red; }
     </style>
 </head>
 <body>
-    <h1>Face Recognition</h1>
 
-    <video id="video" width="320" height="240" autoplay></video>
+    <h2>Face Recognition</h2>
+
+    <video id="video" autoplay playsinline></video>
     <br><br>
-    <button onclick="captureAndSend()">Recognize Me</button>
-
-    <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
-
     <div class="result" id="result"></div>
 
     <script>
-        // Access webcam
         const video = document.getElementById('video');
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                video.srcObject = stream;
-            })
-            .catch(err => {
-                console.error("Error accessing webcam:", err);
-            });
 
-        function captureAndSend() {
-            const canvas = document.getElementById('canvas');
+        // Access mobile or PC camera with preferred settings
+        navigator.mediaDevices.getUserMedia({
+            video: {
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                facingMode: "user"
+            }
+        })
+        .then(stream => {
+            video.srcObject = stream;
+        })
+        .catch(err => {
+            console.error("Camera error:", err);
+        });
+
+        // Check for face continuously
+        function detectFace() {
+            const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             const imageData = canvas.toDataURL('image/jpeg');
 
+            // Send image for face recognition
             fetch("{% url 'recognize_face' %}", {
                 method: 'POST',
                 headers: {
@@ -46,14 +54,14 @@
                 },
                 body: JSON.stringify({ image_data: imageData })
             })
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
                 const resultDiv = document.getElementById('result');
                 if (data.status === 'success') {
                     resultDiv.innerHTML = `
                         <strong>Match Found!</strong><br>
-                        <b>Name:</b> ${data.name} <br>
-                        <b>UID:</b> ${data.uid} <br>
+                        <b>Name:</b> ${data.name}<br>
+                        <b>UID:</b> ${data.uid}<br>
                         <b>Class:</b> ${data.class_name}
                     `;
                     resultDiv.classList.remove("error");
@@ -63,9 +71,13 @@
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error("Request error:", error);
             });
         }
+
+        // Auto-recognize face every 3 seconds
+        setInterval(detectFace, 3000); // Adjust the interval as needed
     </script>
+
 </body>
 </html>

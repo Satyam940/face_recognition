@@ -6,10 +6,11 @@
 <body>
     <h2>Register Your Face</h2>
 
+
     <form id="registerForm" method="POST">
         {% csrf_token %}
         {{ form.as_p }}
-        <video id="video" width="400" height="300" autoplay></video><br>
+        <video id="video" width="640" height="480" autoplay></video><br>
         <button type="button" onclick="capture()">Capture</button><br><br>
 
         <input type="hidden" name="image_data" id="image_data">

@@ -6,6 +6,10 @@ import json
 import base64
 from .forms import KnownFaceForm
 from .models import KnownFace
+from PIL import Image
+import io
+import numpy as np
+from PIL import Image, ExifTags
 
 def register_face(request):
     if request.method == 'POST':
@@ -44,51 +48,67 @@ def register_face(request):
 
     return render(request, 'fr/register_face.html', {'form': form})
 
+def auto_rotate_image(file_path):
+    """Rotate image if it has EXIF orientation (phones often add this)."""
+    try:
+        image = Image.open(file_path)
+        for orientation in ExifTags.TAGS.keys():
+            if ExifTags.TAGS[orientation] == 'Orientation':
+                break
+
+        exif = image._getexif()
+        if exif and orientation in exif:
+            if exif[orientation] == 3:
+                image = image.rotate(180, expand=True)
+            elif exif[orientation] == 6:
+                image = image.rotate(270, expand=True)
+            elif exif[orientation] == 8:
+                image = image.rotate(90, expand=True)
+        image.save(file_path)
+    except Exception as e:
+        print("EXIF rotation skipped:", e)
+
+@csrf_exempt
 def recognize_face(request):
+    if request.method == 'GET':
+        return render(request, 'fr/recognize_face.html')  # load webcam page on GET
+
     if request.method == 'POST':
         try:
-            # Load and decode the image
             data = json.loads(request.body)
             image_data = data.get('image_data')
 
             if not image_data:
-                return JsonResponse({'status': 'fail', 'message': 'No image data'})
+                return JsonResponse({'status': 'fail', 'message': 'No image received'}, status=400)
 
-            # Decode the base64 image
-            header, encoded = image_data.split(',', 1)
-            img_data = base64.b64decode(encoded)
+            # Decode base64 image
+            image_data = image_data.split(',')[1]
+            image = Image.open(io.BytesIO(base64.b64decode(image_data)))
+            image_np = np.array(image)
 
-            # Save the image temporarily
-            with open("temp_recog.jpg", "wb") as f:
-                f.write(img_data)
+            # Get face encodings
+            face_encodings = face_recognition.face_encodings(image_np)
 
-            # Use face_recognition to find face encodings
-            image = face_recognition.load_image_file("temp_recog.jpg")
-            encodings = face_recognition.face_encodings(image)
+            if not face_encodings:
+                return JsonResponse({'status': 'fail', 'message': 'No face found in image'}, status=400)
 
-            if not encodings:
-                return JsonResponse({'status': 'fail', 'message': 'No face found in the image'})
+            input_encoding = face_encodings[0]
 
-            captured_encoding = encodings[0]
-
-            # Compare the captured encoding with stored known encodings
-            for known in KnownFace.objects.all():
-                known_encoding = np.array(json.loads(known.encoding))
-                match = face_recognition.compare_faces([known_encoding], captured_encoding)[0]
+            for face in KnownFace.objects.all():
+                known_encoding = np.array(json.loads(face.encoding))
+                match = face_recognition.compare_faces([known_encoding], input_encoding)[0]
 
                 if match:
                     return JsonResponse({
                         'status': 'success',
-                        'name': known.name,
-                        'uid': known.uid,
-                        'class_name': known.class_name,
+                        'name': face.name,
+                        'uid': face.uid,
+                        'class_name': face.class_name
                     })
 
-            return JsonResponse({'status': 'fail', 'message': 'No match found'})
+            return JsonResponse({'status': 'fail', 'message': 'Face not recognized'}, status=404)
 
         except Exception as e:
-            # Log the error
-            print(f"Error: {str(e)}")
-            return JsonResponse({'status': 'fail', 'message': 'An error occurred: ' + str(e)})
+            return JsonResponse({'status': 'fail', 'message': str(e)}, status=500)
 
-    return JsonResponse({'status': 'fail', 'message': 'Only POST method is allowed'})
+    return JsonResponse({'status': 'fail', 'message': 'Only POST method allowed'}, status=405)

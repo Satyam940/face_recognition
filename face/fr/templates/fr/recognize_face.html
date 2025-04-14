@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Face Recognition</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        video { border: 2px solid #333; }
+        .result { margin-top: 30px; font-size: 18px; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Face Recognition</h1>
+
+    <video id="video" width="320" height="240" autoplay></video>
+    <br><br>
+    <button onclick="captureAndSend()">Recognize Me</button>
+
+    <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+
+    <div class="result" id="result"></div>
+
+    <script>
+        // Access webcam
+        const video = document.getElementById('video');
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error("Error accessing webcam:", err);
+            });
+
+        function captureAndSend() {
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = canvas.toDataURL('image/jpeg');
+
+            fetch("{% url 'recognize_face' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ image_data: imageData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('result');
+                if (data.status === 'success') {
+                    resultDiv.innerHTML = `
+                        <strong>Match Found!</strong><br>
+                        <b>Name:</b> ${data.name} <br>
+                        <b>UID:</b> ${data.uid} <br>
+                        <b>Class:</b> ${data.class_name}
+                    `;
+                    resultDiv.classList.remove("error");
+                } else {
+                    resultDiv.innerHTML = `<strong>${data.message}</strong>`;
+                    resultDiv.classList.add("error");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -21,5 +21,6 @@ from fr import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('register/', views.register_face, name='register_face'),
-    path('recognize/', views.recognize_from_webcam, name='recognize_from_webcam'),
+    path('recognize/', views.recognize_face, name='recognize_face'),
+
 ]

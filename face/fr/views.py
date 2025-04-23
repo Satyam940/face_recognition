@@ -1,11 +1,11 @@
-from django.shortcuts import render
+from django.shortcuts import render , redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import face_recognition
 import json
 import base64
 from .forms import KnownFaceForm
-from .models import KnownFace
+from .models import KnownFace , Attendance
 from PIL import Image
 import io
 import numpy as np
@@ -112,3 +112,16 @@ def recognize_face(request):
             return JsonResponse({'status': 'fail', 'message': str(e)}, status=500)
 
     return JsonResponse({'status': 'fail', 'message': 'Only POST method allowed'}, status=405)
+
+
+def student_dashboard(request):
+    uid = request.session.get('student_uid')
+    if not uid:
+        return redirect('student_login')
+
+    student = KnownFace.objects.get(uid=uid)
+    attendance_records = Attendance.objects.filter(student=student).order_by('-date_time')
+    return render(request, 'fr/student_dashboard.html', {
+        'student': student,
+        'attendance_records': attendance_records
+    })

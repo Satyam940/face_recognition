@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 # models.py
 from django.db import models
@@ -19,10 +20,10 @@ class KnownFace(models.Model):
 
 
 class Attendance(models.Model):
-    student = models.ForeignKey(KnownFace , on_delete=models.CASCADE)
+    student = models.ForeignKey(KnownFace, on_delete=models.CASCADE)
     subject = models.CharField(max_length=100)
-    date =  models.DateField(auto_now=True)
-    present = models.BooleanField(default=True)
+    date_time = models.DateTimeField(default=timezone.now)
+    status = models.BooleanField(default=False)  # True = Present, False = Absent
 
     def __str__(self):
-        return self.student.name
+        return f"{self.student.name} - {self.subject} - {'Present' if self.status else 'Absent'}"

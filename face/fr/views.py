@@ -10,6 +10,7 @@ from PIL import Image
 import io
 import numpy as np
 from PIL import Image, ExifTags
+from django.contrib import messages
 
 def register_face(request):
     if request.method == 'POST':
@@ -125,3 +126,24 @@ def student_dashboard(request):
         'student': student,
         'attendance_records': attendance_records
     })
+
+def student_login(request):
+    if request.method == 'POST':
+        uid = request.POST.get('uid')
+        password = request.POST.get('password')
+
+        try:
+            student = KnownFace.objects.get(uid=uid)
+            if student.password == password:
+                request.session['student_uid'] = uid  # Set session
+                return redirect('student_dashboard')   # Redirect to dashboard
+            else:
+                messages.error(request, 'Incorrect password.')
+        except KnownFace.DoesNotExist:
+            messages.error(request, 'UID not found.')
+
+    return render(request, 'fr/student_login.html')
+
+def student_logout(request):
+    request.session.flush()  # Clear all session data
+    return redirect('student_login')  

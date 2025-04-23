@@ -1,0 +1,19 @@
+<h2>Welcome, {{ student.name }}</h2>
+<p>UID: {{ student.uid }}</p>
+<p>Class: {{ student.class_name }}</p>
+
+<h3>Your Attendance Records:</h3>
+<table border="1">
+    <tr>
+        <th>Date & Time</th>
+        <th>Subject</th>
+        <th>Status</th>
+    </tr>
+    {% for record in attendance_records %}
+    <tr>
+        <td>{{ record.date_time }}</td>
+        <td>{{ record.subject }}</td>
+        <td>{{ record.status|yesno:"Present,Absent" }}</td>
+    </tr>
+    {% endfor %}
+</table>

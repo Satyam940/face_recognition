@@ -22,5 +22,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.register_face, name='register_face'),
     path('recognize/', views.recognize_face, name='recognize_face'),
+    path('student/login/', views.student_login, name='student_login'),
+    path('student/dashboard/', views.student_dashboard, name='student_dashboard'),
+    path('student/logout/', views.student_logout, name='student_logout'),
+
 
 ]

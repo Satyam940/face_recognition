@@ -71,7 +71,7 @@ def auto_rotate_image(file_path):
 @csrf_exempt
 def recognize_face(request):
     if request.method == 'GET':
-        return render(request, 'fr/recognize_face.html')  # load webcam page on GET
+        return render(request, 'fr/recognize_face.html')  
 
     if request.method == 'POST':
         try:

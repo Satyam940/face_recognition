@@ -11,11 +11,13 @@
         {% csrf_token %}
         {{ form.as_p }}
         <video id="video" width="640" height="480" autoplay></video><br>
-        <button type="button" onclick="capture()">Capture</button><br><br>
+        <button style="height: 100px; width: 100px;" type="button" onclick="capture()">Capture</button><br><br>
 
         <input type="hidden" name="image_data" id="image_data">
 
-        <button type="submit">Submit</button>
+        <button style="height: 100px; width: 100px;" type="submit">Submit</button>
+        <!-- <a style  href="{url 'recognize_face'}"> recognize_face</a> -->
+        <button style="height: 100px; width: 100px;"><a href="{%url 'recognize_face'%}">recognize_face</a></button>
     </form>
 
     <p id="message"></p>

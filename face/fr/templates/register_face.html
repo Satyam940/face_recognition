@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Register Face{% endblock %}
+{% block content %}
+<h2>Register New Face</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <video id="video" width="640" height="480" autoplay></video>
+    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+    <input type="hidden" name="image_data" id="image_data">
+    <br><br>
+    <button type="submit" onclick="captureImage()">Capture & Register</button>
+</form>
+{% if success %}<p style="color:green;">Face Registered Successfully!</p>{% endif %}
+{% if error %}<p style="color:red;">{{ error }}</p>{% endif %}
+<script>
+    const video = document.getElementById('video');
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => video.srcObject = stream)
+        .catch(err => console.error("Webcam error:", err));
+
+    function captureImage() {
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL('image/jpeg');
+        document.getElementById('image_data').value = imageData;
+    }
+</script>
+{% endblock %}
